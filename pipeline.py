@@ -1,5 +1,5 @@
 """
-Export high-level apis that can be call to execute lane detection methods
+Export high-level apis that can be called to execute lane detection methods
 """
 import glob
 import numpy as np
@@ -23,6 +23,9 @@ def calibrate_camera():
     camera.calibrate(False)
 
 
+calibrate_camera()
+
+
 def pipeline(image_name: str, frame: np.ndarray) -> np.ndarray:
     """Pipeline that handles a video stream"""
     global LANE
@@ -39,13 +42,13 @@ def pipeline(image_name: str, frame: np.ndarray) -> np.ndarray:
     )
 
     img_name = image_name.replace(
-      'video_binary_output_images',
-      'output_fit_images'
+        'video_binary_output_images',
+        'output_fit_images'
     )
     image = Image.from_camera_config(
-      img_name,
-      "cam-1",
-      binary_image
+        img_name,
+        "cam-1",
+        binary_image
     )
 
     LANE.update_binary_output(image)

@@ -19,7 +19,7 @@ class Thresholds():
     brightness: Tuple[int, int]
     sobel: Tuple[int, int]
     magnitude: Tuple[int, int]
-    direction: Tuple[int, int]
+    direction: Tuple[float, float]
 
     def __init__(
         self,

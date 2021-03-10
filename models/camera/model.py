@@ -3,7 +3,7 @@ Camera class used to calibrate cameras and undistort images
 using a calculated distortion matrix and distortion coefficients.
 You only create an instance of this class if you need to calibrate a
 camera. Once a camera is calibrated, pickle files will be created. These
-pickle files will store the 2D ponts, 3D points, distortion matrix and the
+pickle files will store the 2D points, 3D points, distortion matrix and the
 distortion coefficients. This data is also accessible directly thorough the
 class. Data persists till the instance of the class is destroyed.
 """
@@ -13,6 +13,7 @@ from typing import List, Tuple
 from constants import _OBJ_IMG_PTS_PICKLE_FILE_NAME
 from constants import _DIST_MTX_COE_PICKLE_FILE_NAME
 import matplotlib.pyplot as plt
+from models.image import Image
 
 from cv2 import cv2
 import numpy as np
@@ -59,13 +60,13 @@ class Camera():
         pattern_size: Tuple[int, int]
     ) -> "Camera":
         """Construct a Camera class by providing a calibration config"""
+        if len(calibration_images) < 1:
+            raise ValueError('No calibration images passed')
         return cls(uuid, False, calibration_images, pattern_size)
 
-    def get_is_calibrated(self) -> bool:
-        """For now always return false. In the future add logic here to check
-           if pickle files are populated, return true
-        """
-        return self.is_calibrated
+    def _store_config(self, name: str, config: dict):
+        with open(name, 'wb') as file:
+            pickle.dump(config, file)
 
     def _update_img_obj_points(
         self,
@@ -97,29 +98,8 @@ class Camera():
                 ax1.set_title('Original Image')
                 ax1.imshow(original_image)
 
-                ax2.set_title('Calibrated Image')
+                ax2.set_title('Image clibration')
                 ax2.imshow(calibrated_image)
-
-    def _store_obj_img_points(self):
-        new_obj = {
-            'objpoints': self._objpoints,
-            'imgpoints': self._imgpoints
-        }
-        with open(
-            self.uuid + '_' + _OBJ_IMG_PTS_PICKLE_FILE_NAME, 'wb'
-        ) as file:
-            pickle.dump(new_obj, file)
-
-    def _store_distortion_config(self):
-        new_obj = {
-            'mtx': self._distortion_matrix,
-            'coefficients': self._distortion_coefficients,
-            'pattern_size': self.pattern_size
-        }
-        with open(
-            self.uuid+'_'+_DIST_MTX_COE_PICKLE_FILE_NAME, 'wb'
-        ) as file:
-            pickle.dump(new_obj, file)
 
     def generate_distortion_config(self, image_shape: Tuple[int, int]):
         """This method should only be called if the distortion matrix and
@@ -140,22 +120,27 @@ class Camera():
         )
         self._distortion_matrix = mtx
         self._distortion_coefficients = dist
-        self._store_distortion_config()
+        self._store_config(
+            self.uuid+'_'+_DIST_MTX_COE_PICKLE_FILE_NAME, {
+                'mtx': self._distortion_matrix,
+                'coefficients': self._distortion_coefficients,
+                'pattern_size': self.pattern_size
+            })
 
     def calibrate(self, is_dev: bool):
         """Iterate over self.calibration_images and populate
            objpoints and imgpoints
         """
-        gray_scale_img: np.ndarray = np.array([])
         for idx, fname in enumerate(self.calibration_images):
             img = cv2.imread(fname)
             gray_scale_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
             self._update_img_obj_points(idx, img, gray_scale_img, is_dev)
-            self._store_obj_img_points()
-
-        if is_dev is True:
-            cv2.destroyAllWindows()
+            self._store_config(
+                self.uuid + '_' + _OBJ_IMG_PTS_PICKLE_FILE_NAME, {
+                    'objpoints': self._objpoints,
+                    'imgpoints': self._imgpoints
+                })
 
         image_shape: Tuple[int, int] = (
             gray_scale_img.shape[1],
@@ -163,3 +148,24 @@ class Camera():
         )
         self.generate_distortion_config(image_shape)
         self.is_calibrated = True
+
+        if is_dev is True:
+            test_image_name = "camera_cal/calibration1.jpg"
+            img = cv2.imread(test_image_name)
+            distorted_image = Image.from_camera_config(
+                "camera_cal/calibration1.jpg",
+                "cam-1",
+                img
+            )
+            undistorted_image = distorted_image.undistort()
+            _, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 10))
+            ax1.set_title('Original Image')
+            ax1.imshow(img)
+            ax2.set_title('Calibrated Image')
+            ax2.imshow(undistorted_image)
+            cv2.imwrite('calibration_test/calibrated-1.jpg', undistorted_image)
+            cv2.destroyAllWindows()
+
+    def get_is_calibrated(self) -> bool:
+        """Returns True if camera has been calibrated"""
+        return self.is_calibrated

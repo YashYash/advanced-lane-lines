@@ -141,7 +141,8 @@ class Image():
         abs_sobel_y = np.absolute(sobel_y)
         direction = np.arctan2(abs_sobel_y, abs_sobel_x)
         binary_output = np.zeros_like(direction)
-        binary_output[(direction >= threshold[0]) & (direction <= threshold[1])] = 1
+        binary_output[(direction >= threshold[0]) &
+                      (direction <= threshold[1])] = 1
         return binary_output
 
     def saturation_binary(self) -> np.ndarray:
@@ -160,7 +161,7 @@ class Image():
         """Returns binary output. Apply threshold to LAB brighness channel"""
         thresholds = self.thresholds
         lab = cv2.cvtColor(self.image, cv2.COLOR_BGR2Lab)
-        b_channel = lab[:,:,2]
+        b_channel = lab[:, :, 2]
         b_binary = np.zeros_like(b_channel)
         b_binary[
             (b_channel >= thresholds.brightness[0]) &
@@ -172,7 +173,7 @@ class Image():
         """Returns binary output. Apply threshold to LAB lightness channel"""
         thresholds = self.thresholds
         hls = cv2.cvtColor(self.image, cv2.COLOR_BGR2HLS)
-        l_channel = hls[:,:,1]
+        l_channel = hls[:, :, 1]
         l_binary = np.zeros_like(l_channel)
         l_binary[
             (l_channel >= thresholds.lightness[0]) &
@@ -267,13 +268,10 @@ class Image():
 
         warped = cv2.warpPerspective(self.image, transform, (width, height))
         self.image = warped
-
         if is_dev is True:
-            mask = np.zeros_like(self._og_image)
-            cv2.fillPoly(mask, vertices, 255)
-            masked_image = cv2.bitwise_and(self._og_image, mask)
-            plt.figure()
-            plt.imshow(masked_image)
+            fname = self.name.replace('binary_outputs', 'birds_eye_view')
+            cv2.imwrite(fname, warped)
+            self.name.replace('birds_eye_view', 'binary_outputs')
 
         return warped
 

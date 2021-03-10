@@ -1,6 +1,8 @@
 """
-Instance of a Lane in a Road model. The primary purpose of this class is to
-return lane lines (Line model).
+Lane takes a binary_ouput Image model. The main purpose is to
+calculate the curve that fits the lane lines. This will make it
+very easy to construct Line models which will be used to highlight
+the lane lines in the original image
 """
 from typing import Tuple
 from models.image import Image
@@ -12,25 +14,23 @@ M_PER_PIXEL_X = 3.7 / 700
 
 
 class Lane():
-    """Lane takes a binary_ouput Image model. The main purpose is to
-       calculate the curve that fits the lane lines. This will make it
-       very easy to construct Line models which will be used to highlight
-       the lane lines in the original image
+    """Constructs a lane model that exposes apis used to
+       transform a provided binary_output.
     """
     binary_output: "Image"
 
     _lane_polygon: np.ndarray
     _lane_exists: bool = False
     _fitted_line_curves: np.ndarray
+    _num_lines: int = 0
+    _line_count_max: int = 10
 
-    num_lines: int = 0
-    line_count_max: int = 10
-    leftx: np.ndarray = np.array([])
-    rightx: np.ndarray = np.array([])
-    lefty: np.ndarray = np.array([])
-    righty: np.ndarray = np.array([])
-    left_fit: np.ndarray = np.array([])
-    right_fit: np.ndarray = np.array([])
+    _leftx: np.ndarray = np.array([])
+    _rightx: np.ndarray = np.array([])
+    _lefty: np.ndarray = np.array([])
+    _righty: np.ndarray = np.array([])
+    _left_fit: np.ndarray = np.array([])
+    _right_fit: np.ndarray = np.array([])
 
     def __init__(
         self,
@@ -46,14 +46,7 @@ class Lane():
         """Create Lane given a lane_uuid"""
         return cls(lane_uuid)
 
-    def update_binary_output(self, binary_output: "Image"):
-        """A single instalce of the Lane model is used to process all
-           video frames. Once we transition from one frame to anothe,
-           the image being processed needs to be updated
-        """
-        self.binary_output = binary_output
-
-    def find_lane_pixels(self) -> Tuple[int, int, int, int, np.ndarray]:
+    def _find_lane_pixels(self) -> Tuple[int, int, int, int, np.ndarray]:
         """Return the pixels used to represent the left and right lanes"""
         image = self.binary_output.get_image()
         histogram = self.binary_output.get_histogram()
@@ -145,23 +138,23 @@ class Lane():
                 self._lane_exists = False
                 return leftx, lefty, rightx, righty, output_image
         else:
-            self.righty = righty
-            self.rightx = rightx
-            self.lefty = lefty
-            self.leftx = leftx
-            self.left_fit = np.polyfit(lefty, leftx, 2)
-            self.right_fit = np.polyfit(righty, rightx, 2)
+            self._righty = righty
+            self._rightx = rightx
+            self._lefty = lefty
+            self._leftx = leftx
+            self._left_fit = np.polyfit(lefty, leftx, 2)
+            self._right_fit = np.polyfit(righty, rightx, 2)
 
         self._lane_exists = True
         return leftx, lefty, rightx, righty, output_image
 
-    def fit_polynomial(self) -> np.ndarray:
+    def _fit_polynomial(self) -> np.ndarray:
         """Determine the polynomial constants for the left and right
            lane lines by fitting an equation to their curves
         """
         image = self.binary_output.get_image()
         birds_eye_image = np.dstack((image, image, image))
-        leftx, lefty, rightx, righty, output_image = self.find_lane_pixels()
+        leftx, lefty, rightx, righty, output_image = self._find_lane_pixels()
         margin = 100
         left_fit = np.polyfit(lefty, leftx, 2)
         right_fit = np.polyfit(righty, rightx, 2)
@@ -205,7 +198,8 @@ class Lane():
         lefty = nonzeroy[left_lane_indexes]
         righty = nonzeroy[right_lane_indexes]
 
-        ploty = np.linspace(0, output_image.shape[0] - 1, output_image.shape[0])
+        ploty = np.linspace(
+            0, output_image.shape[0] - 1, output_image.shape[0])
         try:
             left_fitx = (
                 (left_fit[0] * ploty ** 2) +
@@ -271,7 +265,7 @@ class Lane():
     def _store_image(name: str, image: np.ndarray):
         cv2.imwrite(name, image)
 
-    def estimated_lane(self):
+    def _predict_lane(self):
         """Once we feel confident that the fit is accurate, we can just
            use the stored left_fit and right_fit to find the lane
         """
@@ -284,28 +278,28 @@ class Lane():
 
         left_lane_indexes = (
             (nonzerox > (
-                self.left_fit[0]*(nonzeroy**2) +
-                self.left_fit[1]*nonzeroy +
-                self.left_fit[2] - margin
+                self._left_fit[0]*(nonzeroy**2) +
+                self._left_fit[1]*nonzeroy +
+                self._left_fit[2] - margin
             )) & (
                 nonzerox < (
-                    (self.left_fit[0]*(nonzeroy**2)) +
-                    (self.left_fit[1]*nonzeroy) +
-                    (self.left_fit[2] + margin)
+                    (self._left_fit[0]*(nonzeroy**2)) +
+                    (self._left_fit[1]*nonzeroy) +
+                    (self._left_fit[2] + margin)
                 )
             )
         )
 
         right_lane_indexes = (
             (nonzerox > (
-                self.right_fit[0]*(nonzeroy**2) +
-                self.right_fit[1]*nonzeroy +
-                self.right_fit[2] - margin
+                self._right_fit[0]*(nonzeroy**2) +
+                self._right_fit[1]*nonzeroy +
+                self._right_fit[2] - margin
             )) & (
                 nonzerox < (
-                    (self.right_fit[0]*(nonzeroy**2)) +
-                    (self.right_fit[1]*nonzeroy) +
-                    (self.right_fit[2] + margin)
+                    (self._right_fit[0]*(nonzeroy**2)) +
+                    (self._right_fit[1]*nonzeroy) +
+                    (self._right_fit[2] + margin)
                 )
             )
         )
@@ -316,26 +310,87 @@ class Lane():
         righty = nonzeroy[right_lane_indexes]
 
         if lefty.size == 0 or righty.size == 0:
-            if self.lefty.size == 0 or self.righty.size == 0:
+            if self._lefty.size == 0 or self._righty.size == 0:
                 self._lane_exists = False
                 return out_img
         else:
-            self.righty = righty
-            self.rightx = rightx
-            self.lefty = lefty
-            self.leftx = leftx
-            self.left_fit = np.polyfit(lefty, leftx, 2)
-            self.right_fit = np.polyfit(righty, rightx, 2)
+            self._righty = righty
+            self._rightx = rightx
+            self._lefty = lefty
+            self._leftx = leftx
+            self._left_fit = np.polyfit(lefty, leftx, 2)
+            self._right_fit = np.polyfit(righty, rightx, 2)
 
         self._lane_exists = True
         return out_img
 
+    def _get_curvate_radius(self) -> int:
+        """Get the lane lines curvature"""
+        if len(self._rightx) == 0 & len(self._righty) == 0:
+            return 0
+
+        left_fit_cr = np.polyfit(
+            (self._lefty*M_PER_PIXEL_Y),
+            (self._leftx*M_PER_PIXEL_X),
+            2
+        )
+        right_fit_cr = np.polyfit(
+            (self._righty*M_PER_PIXEL_Y),
+            (self._rightx*M_PER_PIXEL_X),
+            2
+        )
+
+        left_curverad = (
+            (
+                1 + (2*left_fit_cr[0]*np.max(
+                    self._lefty
+                ) + left_fit_cr[1])**2
+            )**1.5
+        ) / (np.absolute(2*left_fit_cr[0]))
+        right_curverad = (
+            (
+                1 + (2*right_fit_cr[0]*np.max(
+                    self._lefty
+                ) + right_fit_cr[1])**2
+            )**1.5
+        ) / (np.absolute(2*right_fit_cr[0]))
+
+        return int((left_curverad + right_curverad)/2)
+
+    def _get_distance_from_center(self) -> int:
+        """Calculate the distance from the center of the lane"""
+        image = self.binary_output.get_image()
+        viewport_width = image.shape[1]
+        viewport_height = image.shape[0]
+        viewport_middle = viewport_width/2
+
+        rightx = (
+            (self._right_fit[0]*viewport_height**2) +
+            (self._right_fit[1]*viewport_height) +
+            (self._right_fit[2])
+        )
+        leftx = (
+            (self._left_fit[0]*viewport_height**2) +
+            (self._left_fit[1]*viewport_height) +
+            (self._left_fit[2])
+        )
+        curr_center = (rightx+leftx)/2
+        dist = (viewport_middle - curr_center) * M_PER_PIXEL_X
+        return dist
+
+    def update_binary_output(self, binary_output: "Image"):
+        """A single instalce of the Lane model is used to process all
+           video frames. Once we transition from one frame to anothe,
+           the image being processed needs to be updated
+        """
+        self.binary_output = binary_output
+
     def get_lines(self) -> np.ndarray:
         """Return an image displaying detected lane lines"""
-        if self.num_lines < self.line_count_max:
-            self.num_lines += 1
-            return self.fit_polynomial()
-        return self.estimated_lane()
+        if self._num_lines < self._line_count_max:
+            self._num_lines += 1
+            return self._fit_polynomial()
+        return self._predict_lane()
 
     def get_lane_polygon(self) -> np.ndarray:
         """Return image of the lane filled. This image will
@@ -344,22 +399,22 @@ class Lane():
         image = self.binary_output.get_image()
 
         left_fitx = (
-            self.left_fit[0]*self.lefty**2 +
-            self.left_fit[1]*self.lefty + self.left_fit[2]
+            self._left_fit[0]*self._lefty**2 +
+            self._left_fit[1]*self._lefty + self._left_fit[2]
         )
         right_fitx = (
-            self.right_fit[0]*self.righty**2 +
-            self.right_fit[1]*self.righty +
-            self.right_fit[2]
+            self._right_fit[0]*self._righty**2 +
+            self._right_fit[1]*self._righty +
+            self._right_fit[2]
         )
 
         image_zeros = np.zeros_like(image).astype(np.uint8)
         polygon_image = np.dstack((image_zeros, image_zeros, image_zeros))
         pts_left = np.array([
-            np.flipud(np.transpose(np.vstack([left_fitx, self.lefty])))
+            np.flipud(np.transpose(np.vstack([left_fitx, self._lefty])))
         ])
         pts_right = np.array([
-            np.transpose(np.vstack([right_fitx, self.righty]))
+            np.transpose(np.vstack([right_fitx, self._righty]))
         ])
         pts = np.hstack((pts_left, pts_right))
 
@@ -395,17 +450,34 @@ class Lane():
         final_output = cv2.addWeighted(image, 1, warped_filled_lane, 0.5, 0)
 
         if show_data is True:
-            curvature_radius = self.get_curvate_radius()
+            curvature = self._get_curvate_radius()
             curvature_text = (
                 'Curvature: ' +
-                ' {:0.6f}'.format(curvature_radius) +
+                ' {:0.6f}'.format(curvature) +
                 'm '
             )
             cv2.putText(
                 final_output,
                 curvature_text,
                 (40, 70),
-                cv2.FONT_HERSHEY_DUPLEX,
+                cv2.FONT_HERSHEY_TRIPLEX,
+                1.5,
+                (255, 255, 255),
+                2,
+                cv2.LINE_AA
+            )
+
+            distance = self._get_distance_from_center()
+            distance_text = (
+                'Distance from middle: ' +
+                ' {:0.6f}'.format(distance) +
+                'm '
+            )
+            cv2.putText(
+                final_output,
+                distance_text,
+                (40, 120),
+                cv2.FONT_HERSHEY_TRIPLEX,
                 1.5,
                 (255, 255, 255),
                 2,
@@ -424,30 +496,3 @@ class Lane():
         self._store_image(final_output_name, final_output)
 
         return final_output
-
-    def get_curvate_radius(self) -> int:
-        """Get the lane lines curvature"""
-        if len(self.rightx) == 0 & len(self.righty) == 0:
-            return 0
-
-        left_fit_cr = np.polyfit(
-            (self.lefty*M_PER_PIXEL_Y),
-            (self.leftx*M_PER_PIXEL_X),
-            2
-        )
-        right_fit_cr = np.polyfit(
-            (self.righty*M_PER_PIXEL_Y),
-            (self.rightx*M_PER_PIXEL_X),
-            2
-        )
-
-        left_curverad = ((1 + (2*left_fit_cr[0]*np.max(self.lefty) + left_fit_cr[1])**2)**1.5) / (np.absolute(2*left_fit_cr[0]))
-        right_curverad = ((1 + (2*right_fit_cr[0]*np.max(self.lefty) + right_fit_cr[1])**2)**1.5)/np.absolute(2*right_fit_cr[0])
-
-        return int((left_curverad + right_curverad)/2)
-
-    def get_distance_from_center(self) -> int:
-        """Calculate the distance from the center of the lane"""
-        # distance = 'Distance to middle: ' + ' {:0.6f}'.format(self._distance_to_middle()) + 'm '
-        # cv2.putText(out_img, distance, (40,120), cv2.FONT_HERSHEY_DUPLEX, 1.5, (255,255,255), 2, cv2.LINE_AA)
-        return 0
