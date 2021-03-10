@@ -23,9 +23,6 @@ def calibrate_camera():
     camera.calibrate(False)
 
 
-calibrate_camera()
-
-
 def pipeline(image_name: str, frame: np.ndarray) -> np.ndarray:
     """Pipeline that handles a video stream"""
     global LANE
