@@ -28,8 +28,10 @@
 [final_output]: ./final_output/test1.jpg "Final Output"
 [image6]: ./examples/example_output.jpg "Output"
 [video1]: ./project_video.mp4 "Video"
+[pipeline]: ./data_pipeline.jpeg "Pipeline"
 
-## [Rubric](https://review.udacity.com/#!/rubrics/571/view) Points
+## Pipeline Stages Summarized
+![alt text][pipeline]
 
 ### Camera Calibration
 #### the /camera_cal directory stores the chessboard images that cv2 will use to calibrate the camera's distortion. Camera.calibrate iterates over each of the images in /camera_cal and genrates the camera_cal_output directory which holds the original images with the cornerns highlighted. Camera.calibrate stores the distortion matrix and the distortion coefficients in cam-1_dist_mtx_coe.p pickle file. This config is used by Image classes that have an undistort member method. To test the Camera calibration, you can do any of the following:
@@ -64,8 +66,6 @@
   - video_pipeline calls `pipeline()` in `pipeline.py`
   - pipeline() runs all the steps above for each video frame. The only additional logic is that the Lane model is constructed only once. Every time a new frame is processed, Lane.binary_output is updated to the new frame and the same process runs again on the next frame. This continues till the last frame.
   - Once all frames have been processed and stored under `output_images/`, the images are used to generate `output.mp4`
-
-### Discussion
 
 ## Models
 ### Camera
