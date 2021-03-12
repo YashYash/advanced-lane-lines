@@ -1,7 +1,29 @@
 # Advanced Lane Finding Project
 
+[//]: # (Image References)
+
+[final]: ./examples/final.jpg "Final"
+[distorted]: ./camera_cal/calibration1.jpg "Distorted"
+[undistorted]: ./calibration_test/calibrated-1.jpg "Undistorted"
+[og_image]: ./test_images/test1.jpg "Original Image"
+[birds_eye_view]: ./birds_eye_view/test1.jpg "Bird's eye view Image"
+[binary_output]: ./binary_outputs/test1.jpg "Binary Output"
+[stepped_windows]: ./fit_lines_curves/test1.jpg "Stepped windows"
+[final_output]: ./final_output/test1.jpg "Final Output"
+[image6]: ./examples/example_output.jpg "Output"
+[video1]: ./project_video.mp4 "Video"
+[pipeline]: ./data_pipeline.jpeg "Pipeline"
+
 ### Goal:
-##### Given a video streamed from a camera placed at the front of the car looking forward, detect the lane lines and highlight the lane. Calculate the curvature and how far the car is from the middle of the lane
+##### Given a video streamed from a camera placed at the front of the car looking forward, detect the lane lines and highlight the lane. Calculate the curvature and how far the car is from the middle of the lane. If anyone would like to reference my solution, feel free to hit me up as well. I would be down to help you out. The current solution I have does not work well with really dark shadows, video frames with a lot of sunlight, really sharp turns and video frames that do not have a clear left or right lane lines. The current solution does do a decent job at find the lanes in the first half of the harder challenge video. Hope to improve my current solution by using deep learning later on.
+
+### Current Result:
+#### Here's a link [to the final output mp4 file](https://cronoz-assets.s3-us-west-2.amazonaws.com/udacity/output.mp4)
+
+#### Here's a link [to the harder challenge output mp4 file](https://cronoz-assets.s3-us-west-2.amazonaws.com/udacity/harder_challenge_video_output.mp4)
+
+
+![alt text][final]
 
 ### Steps:
 * Calibrate the camera using chessboard calibration images
@@ -16,19 +38,6 @@
   - Warp the polygon back to the perspective of the original image
   - Overlay the warped polygon on the orginal image to highlight the lane
   - While the above logic runs for each frame, after 10 frames, we start to reuse the equations of the line to predict the polygons the following frames will return. After 10 windows, the equations are reused to fit assume the rest of the curved line. Each iteration the latest coefficients and verified by seeing if nonzero points still land in the window. If they do not the fit for the frame is recalculated, and will once again attempt to reuse the new equation after another 10 frames.
-
-[//]: # (Image References)
-
-[distorted]: ./camera_cal/calibration1.jpg "Distorted"
-[undistorted]: ./calibration_test/calibrated-1.jpg "Undistorted"
-[og_image]: ./test_images/test1.jpg "Original Image"
-[birds_eye_view]: ./birds_eye_view/test1.jpg "Bird's eye view Image"
-[binary_output]: ./binary_outputs/test1.jpg "Binary Output"
-[stepped_windows]: ./fit_lines_curves/test1.jpg "Stepped windows"
-[final_output]: ./final_output/test1.jpg "Final Output"
-[image6]: ./examples/example_output.jpg "Output"
-[video1]: ./project_video.mp4 "Video"
-[pipeline]: ./data_pipeline.jpeg "Pipeline"
 
 ## Pipeline Stages Summarized
 ![alt text][pipeline]
@@ -122,6 +131,8 @@ Once the binary_outputs are generated, the lanes are ready to be detected. This 
 #### The pipeline is run for each frame of the video. You can see the pipeline in `pipline.py`. This method does all of the above for each frame. A single `Lane` class is used globally. After 10 frames, instead of calculating the equations for the left and right lines, the equations calculated from the previous frame are reused. If the reused frames do not find any nonzero points that land in the windows, the equations for the lines is calculated again.
 
 Here's a link [to the final output mp4 file](https://cronoz-assets.s3-us-west-2.amazonaws.com/udacity/output.mp4)
+
+Here's a link [to the harder challenge output mp4 file](https://cronoz-assets.s3-us-west-2.amazonaws.com/udacity/harder_challenge_video_output.mp4)
 
 ---
 

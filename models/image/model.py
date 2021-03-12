@@ -452,7 +452,6 @@ class Image():
         """
         foreground = overlay_image.copy()
         background = self.image.copy()
-        # Check if the foreground is inbound with the new coordinates and raise an error if out of bounds
         background_height = background.shape[0]
         background_width = background.shape[1]
         foreground_height = foreground.shape[0]

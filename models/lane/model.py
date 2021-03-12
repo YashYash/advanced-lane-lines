@@ -23,7 +23,7 @@ class Lane():
     _lane_exists: bool = False
     _fitted_line_curves: np.ndarray
     _num_lines: int = 0
-    _line_count_max: int = 200
+    _line_count_max: int = 30
 
     _leftx: np.ndarray = np.array([])
     _rightx: np.ndarray = np.array([])

@@ -4,6 +4,7 @@ Export high-level apis that can be called to execute lane detection methods
 import glob
 import cv2
 import numpy as np
+import matplotlib.pyplot as plt
 from models import Lane
 from models import Image
 from models import Camera
