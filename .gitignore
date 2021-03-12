@@ -1,2 +1,4 @@
 __pycache__/
 .pytest_cache/
+video_vinary_output_images/
+output_images/

@@ -23,7 +23,7 @@ class Lane():
     _lane_exists: bool = False
     _fitted_line_curves: np.ndarray
     _num_lines: int = 0
-    _line_count_max: int = 10
+    _line_count_max: int = 200
 
     _leftx: np.ndarray = np.array([])
     _rightx: np.ndarray = np.array([])
@@ -198,24 +198,6 @@ class Lane():
         lefty = nonzeroy[left_lane_indexes]
         righty = nonzeroy[right_lane_indexes]
 
-        ploty = np.linspace(
-            0, output_image.shape[0] - 1, output_image.shape[0])
-        try:
-            left_fitx = (
-                (left_fit[0] * ploty ** 2) +
-                (left_fit[1] * ploty) +
-                left_fit[2]
-            )
-            right_fitx = (
-                (right_fit[0] * ploty ** 2) +
-                (right_fit[1] * ploty) +
-                right_fit[2]
-            )
-        except TypeError:
-            print('Function failed to fit a line')
-            left_fitx = 1*ploty**2 + 1*ploty
-            right_fitx = 1*ploty**2 + 1*ploty
-
         window_img = np.zeros_like(output_image)
         output_image[
             nonzeroy[left_lane_indexes],
@@ -226,33 +208,8 @@ class Lane():
             nonzerox[right_lane_indexes]
         ] = [0, 0, 255]
 
-        left_line_window1 = np.array([
-            np.transpose(np.vstack([left_fitx-margin, ploty]))
-        ])
-        left_line_window2 = np.array([
-            np.flipud(np.transpose(np.vstack([left_fitx+margin, ploty])))
-        ])
-        left_line_pts = np.hstack((left_line_window1, left_line_window2))
-
-        right_line_window1 = np.array([
-            np.transpose(np.vstack([right_fitx-margin, ploty]))
-        ])
-        right_line_window2 = np.array([
-            np.flipud(np.transpose(np.vstack([right_fitx+margin, ploty])))
-        ])
-        right_line_pts = np.hstack((right_line_window1, right_line_window2))
-
-        cv2.fillPoly(
-            window_img, np.int_([left_line_pts]), (0, 255, 0), None, None, None
-        )
-        cv2.fillPoly(
-            window_img,
-            np.int_([right_line_pts]),
-            (0, 255, 0), None, None, None
-        )
-
-        result = cv2.addWeighted(window_img, 1, output_image, 0.5, 0)
-        result = cv2.addWeighted(output_image, 1, birds_eye_image, 0.5, 0)
+        result = cv2.addWeighted(output_image, 0.7, birds_eye_image, 1, 8, 0)
+        result = cv2.addWeighted(output_image, 0.5, window_img, 1, 0)
 
         self._fitted_line_curves = result
 
@@ -261,7 +218,7 @@ class Lane():
 
         return result
 
-    @staticmethod
+    @ staticmethod
     def _store_image(name: str, image: np.ndarray):
         cv2.imwrite(name, image)
 
@@ -343,14 +300,14 @@ class Lane():
         left_curverad = (
             (
                 1 + (2*left_fit_cr[0]*np.max(
-                    self._lefty
+                    self._lefty * M_PER_PIXEL_Y
                 ) + left_fit_cr[1])**2
             )**1.5
         ) / (np.absolute(2*left_fit_cr[0]))
         right_curverad = (
             (
                 1 + (2*right_fit_cr[0]*np.max(
-                    self._lefty
+                    self._lefty * M_PER_PIXEL_Y
                 ) + right_fit_cr[1])**2
             )**1.5
         ) / (np.absolute(2*right_fit_cr[0]))
@@ -397,24 +354,26 @@ class Lane():
            overlay the original image (video frame)
         """
         image = self.binary_output.get_image()
+        ploty = np.linspace(
+            0, image.shape[0] - 1, image.shape[0])
 
         left_fitx = (
-            self._left_fit[0]*self._lefty**2 +
-            self._left_fit[1]*self._lefty + self._left_fit[2]
+            self._left_fit[0]*ploty**2 +
+            self._left_fit[1]*ploty + self._left_fit[2]
         )
         right_fitx = (
-            self._right_fit[0]*self._righty**2 +
-            self._right_fit[1]*self._righty +
+            self._right_fit[0]*ploty**2 +
+            self._right_fit[1]*ploty +
             self._right_fit[2]
         )
 
         image_zeros = np.zeros_like(image).astype(np.uint8)
         polygon_image = np.dstack((image_zeros, image_zeros, image_zeros))
         pts_left = np.array([
-            np.flipud(np.transpose(np.vstack([left_fitx, self._lefty])))
+            np.transpose(np.vstack([left_fitx, ploty]))
         ])
         pts_right = np.array([
-            np.transpose(np.vstack([right_fitx, self._righty]))
+            np.flipud(np.transpose(np.vstack([right_fitx, ploty])))
         ])
         pts = np.hstack((pts_left, pts_right))
 
@@ -461,7 +420,7 @@ class Lane():
                 curvature_text,
                 (40, 70),
                 cv2.FONT_HERSHEY_TRIPLEX,
-                1.5,
+                1,
                 (255, 255, 255),
                 2,
                 cv2.LINE_AA
@@ -478,7 +437,7 @@ class Lane():
                 distance_text,
                 (40, 120),
                 cv2.FONT_HERSHEY_TRIPLEX,
-                1.5,
+                1,
                 (255, 255, 255),
                 2,
                 cv2.LINE_AA

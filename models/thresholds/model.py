@@ -27,7 +27,8 @@ class Thresholds():
         self.saturation = (100, 255)
         self.lightness = (200, 255)
         self.brightness = (220, 255)
-        self.sobel = (30, 100)
+        self.sobel_x = (50, 225)
+        self.sobel_y = (100, 255)
         self.magnitude = (30, 100)
         self.direction = (0.6, 1.3)
 
@@ -36,7 +37,8 @@ class Thresholds():
         saturation: Tuple[int, int],
         lightness: Tuple[int, int],
         brightness: Tuple[int, int],
-        sobel: Tuple[int, int],
+        sobel_x: Tuple[int, int],
+        sobel_y: Tuple[int, int],
         magnitude: Tuple[int, int],
         direction: Tuple[int, int]
     ) -> None:
@@ -47,8 +49,10 @@ class Thresholds():
             self.lightness = lightness
         if brightness is not None:
             self.brightness = brightness
-        if sobel is not None:
-            self.sobel = sobel
+        if sobel_x is not None:
+            self.sobel_x = sobel_x
+        if sobel_y is not None:
+            self.sobel_y = sobel_y
         if magnitude is not None:
             self.magnitude = magnitude
         if dir is not None:
@@ -59,6 +63,7 @@ class Thresholds():
         self.saturation = (100, 255)
         self.lightness = (200, 255)
         self.brightness = (220, 255)
-        self.sobel = (30, 100)
+        self.sobel_x = (50, 225)
+        self.sobel_y = (10, 100)
         self.magnitude = (30, 100)
         self.direction = (0.6, 1.3)

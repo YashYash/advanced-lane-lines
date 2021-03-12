@@ -132,4 +132,4 @@ Here's a link [to the final output mp4 file](https://cronoz-assets.s3-us-west-2.
 - The current pipline breaks if it is not able to find either the left or right lanes due to various reasons. There are a few changes that could be made to handle these scenarios:
     - As long as a single lane is detected, the width of the lane can be calculated and used to simulate where the opposite lane would be by shifting over the lane that was found to the left or right.
     - Playing around more with the gradient thresholds to determine how to prevent change in lighting from impacting the detection of lane lines.
-    - To further speed up lane detection, deep learning RNN's can be used to detect lanes in images. The computer vision data along with the deep learning classification can be used to detect lane lines very reliably in all lighting and road conditions.
+    - To further speed up lane detection, deep learning CNN's can be used to detect lanes in images. The computer vision data along with the deep learning classification can be used to detect lane lines very reliably in all lighting and road conditions.
